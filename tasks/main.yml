@@ -66,6 +66,7 @@
     version: "{{ item.version | default(uwsgi_version, true) | default(omit, true) }}"
     virtualenv: "{{ uwsgi_virtualenv | default(omit, true) }}"
     executable: "{{ uwsgi_pip_executable | default(omit, true) }}"
+    break_system_packages: true
   with_items: "{{ uwsgi_pip_packages }}"
   when: uwsgi_install == 'pip'
 
@@ -159,6 +160,12 @@
   file:
     path: "{{ uwsgi_vassal_path }}"
     state: directory
+
+- name: Check that vassals are not run as root
+  fail:
+    msg: Do not run vassals as root!
+  when: (uwsgi_user_group.name == 'root' and 'uid' not in item) or item.uid == 'root'
+  loop: "{{ uwsgi_vassals }}"
 
 - name: configure any vassals defined
   template:
